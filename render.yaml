@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: easybuy-delivery-target-dashboard
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: PHONE_NUMBER_ID
+        sync: false
+      - key: TEMPLATE_LANGUAGE_CODE
+        value: en_US
+      - key: GRAPH_API_VERSION
+        value: v23.0

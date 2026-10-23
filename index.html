@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ur">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasyBuy + Delivery Orders Target Dashboard</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#172033;background:#f4f7fb}
+*{box-sizing:border-box}body{margin:0}header{background:#123b2b;color:white;padding:22px 16px}
+header h1{margin:0 0 7px;font-size:22px}header p{margin:0;opacity:.88;font-size:14px}
+main{max-width:1100px;margin:18px auto;padding:0 14px 36px}.notice{padding:12px 14px;border-radius:12px;background:#fff6dc;border:1px solid #f0d98c;font-size:13px;line-height:1.6;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.stat,.panel{background:white;border:1px solid #e0e7ef;border-radius:14px;padding:14px;box-shadow:0 2px 7px #12203308}.stat strong{font-size:24px;display:block;margin-top:4px}.stat span{font-size:12px;color:#64748b}
+.panel{margin:12px 0}.panel h2{font-size:17px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label{font-size:13px;font-weight:650;display:block;margin-bottom:5px}input,select,textarea{font:inherit;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:white;color:#111827}
+textarea{min-height:100px;resize:vertical}.buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button,.filelabel{border:0;border-radius:9px;padding:11px 14px;font-weight:700;cursor:pointer;background:#176b4a;color:white;font:inherit;font-size:14px}
+button.secondary,.filelabel.secondary{background:#e8eef5;color:#1e293b}button.warn{background:#a94438}button:disabled{opacity:.45;cursor:not-allowed}
+small,.muted{color:#64748b;font-size:12px}table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:9px;border-bottom:1px solid #e5eaf0;text-align:left;font-size:13px}th{background:#f8fafc;position:sticky;top:0}
+.tablewrap{overflow:auto;max-height:400px;border:1px solid #e2e8f0;border-radius:10px}.status{font-size:12px;font-weight:700}.ok{color:#15803d}.bad{color:#b91c1c}.preview{white-space:pre-wrap;background:#f8fafc;padding:12px;border:1px solid #e2e8f0;border-radius:10px;line-height:1.55}
+footer{font-size:12px;color:#64748b;text-align:center;margin-top:22px}
+@media(max-width:650px){.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}header h1{font-size:19px}.stat strong{font-size:21px}}
+</style>
+</head>
+<body>
+<header><h1>EasyBuy + Delivery Orders</h1><p>Daily Target WhatsApp Dashboard · Urdu + English</p></header>
+<main>
+<div class="notice"><b>اہم:</b> یہ قابلِ استعمال ابتدائی ڈیش بورڈ ہے۔ یہ دکانداروں کی فہرست، روزانہ ٹارگٹ اور پیغام تیار کرتا ہے۔ حقیقی Bulk WhatsApp API sending کے لیے Meta Cloud API credentials اور محفوظ backend سرور الگ سے کنفیگر کرنا ضروری ہے۔ اس صفحے میں API token محفوظ نہ کریں۔</div>
+<div class="stats">
+<div class="stat"><span>کل دکاندار / Total shops</span><strong id="shopCount">0</strong></div>
+<div class="stat"><span>EasyBuy باقی / Remaining</span><strong id="ebRemaining">0</strong></div>
+<div class="stat"><span>Delivery Orders باقی</span><strong id="doRemaining">0</strong></div>
+</div>
+<section class="panel">
+<h2>1) Shop Data / دکانداروں کی تفصیل</h2>
+<div class="grid">
+<div><label>Shop / Agent Name</label><input id="name" placeholder="Shop name"></div>
+<div><label>WhatsApp Number (country code سمیت)</label><input id="phone" placeholder="923001234567"></div>
+<div><label>EasyBuy Daily Target</label><input id="ebTarget" type="number" min="0" value="5"></div>
+<div><label>EasyBuy Sales Achieved</label><input id="ebSales" type="number" min="0" value="0"></div>
+<div><label>Delivery Orders Target</label><input id="doTarget" type="number" min="0" value="5"></div>
+<div><label>Delivery Orders Achieved</label><input id="doSales" type="number" min="0" value="0"></div>
+</div>
+<div class="buttons"><button id="addBtn">Add / Update Shop</button><button class="secondary" id="sampleBtn">Load Sample</button><button class="secondary" id="exportBtn">Export CSV</button><label class="filelabel secondary" for="csvFile">Import CSV</label><input id="csvFile" type="file" accept=".csv,text/csv" hidden></div>
+<p class="muted">نمبر 92 سے شروع کریں، مثلاً 923001234567۔ CSV columns: name,phone,ebTarget,ebSales,doTarget,doSales,consent</p>
+</section>
+<section class="panel">
+<h2>2) Shop List / دکانداروں کی فہرست</h2>
+<div class="tablewrap"><table><thead><tr><th>Shop</th><th>WhatsApp</th><th>EB Target</th><th>EB Sales</th><th>EB Left</th><th>DO Target</th><th>DO Done</th><th>DO Left</th><th>Consent</th><th>Action</th></tr></thead><tbody id="shops"></tbody></table></div>
+<div class="buttons"><button id="allConsentBtn" class="secondary">Mark selected consent? / Consent checklist</button><button id="previewBtn" class="secondary">Preview Message</button><button id="sendBtn" disabled>Send via WhatsApp API</button></div>
+<p class="muted">Consent checkbox must be selected for each recipient before sending. The Send button stays disabled until a backend endpoint is configured.</p>
+</section>
+<section class="panel">
+<h2>3) Message Preview / پیغام کا نمونہ</h2>
+<div class="grid"><div><label>Language / زبان</label><select id="lang"><option value="both">Urdu + English</option><option value="ur">Urdu</option><option value="en">English</option></select></div><div><label>Selected Shop</label><select id="selectedShop"></select></div></div>
+<div class="buttons"><button id="previewBtn2">Generate Preview</button><button class="secondary" id="copyBtn">Copy Message</button></div>
+<div class="preview" id="preview">دکاندار منتخب کریں اور Preview Message دبائیں۔</div>
+</section>
+<section class="panel">
+<h2>4) API Setup / اصل Bulk Sending</h2>
+<p>Backend endpoint جب محفوظ طریقے سے سیٹ ہو جائے تو API سے template messages بھیجے جا سکتے ہیں۔ Meta credentials اس HTML فائل میں نہ لکھیں۔</p>
+<div class="grid"><div><label>Backend Send Endpoint</label><input id="endpoint" placeholder="https://your-domain.com/api/send-target"></div><div><label>Approved Template Name</label><input id="template" placeholder="daily_target_update"></div><div><label>Admin API Key (deployment secret)</label><input id="adminKey" type="password" placeholder="Your admin key"></div></div>
+<div class="buttons"><button id="saveConfigBtn" class="secondary">Save Endpoint Settings</button><button id="testBtn" class="secondary">Test Backend Connection</button></div>
+<div id="apiStatus" class="muted">API not connected.</div>
+</section>
+<footer>Local-first prototype · Data stays in this browser until exported. Use a secure backend for real API sending.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let shops=JSON.parse(localStorage.getItem('ebdo_shops')||'[]');
+let cfg=JSON.parse(localStorage.getItem('ebdo_cfg')||'{}');
+$('endpoint').value=cfg.endpoint||'';$('template').value=cfg.template||'daily_target_update';$('adminKey').value='';
+let lastMessage='';
+function num(id){return Math.max(0,Number($(id).value)||0)}
+function left(t,a){return Math.max(0,(Number(t)||0)-(Number(a)||0))}
+function save(){localStorage.setItem('ebdo_shops',JSON.stringify(shops));render()}
+function render(){
+ $('shopCount').textContent=shops.length;
+ $('ebRemaining').textContent=shops.reduce((s,x)=>s+left(x.ebTarget,x.ebSales),0);
+ $('doRemaining').textContent=shops.reduce((s,x)=>s+left(x.doTarget,x.doSales),0);
+ $('shops').innerHTML='';$('selectedShop').innerHTML='';
+ shops.forEach((x,i)=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${esc(x.name)}</td><td>${esc(x.phone)}</td><td>${x.ebTarget}</td><td>${x.ebSales}</td><td>${left(x.ebTarget,x.ebSales)}</td><td>${x.doTarget}</td><td>${x.doSales}</td><td>${left(x.doTarget,x.doSales)}</td><td></td><td><button class="secondary" data-edit="${i}">Edit</button> <button class="warn" data-del="${i}">Delete</button></td>`;
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!x.consent;cb.setAttribute('aria-label','WhatsApp consent');cb.addEventListener('change',()=>{shops[i].consent=cb.checked;save()});tr.children[8].appendChild(cb);$('shops').appendChild(tr);
+  const o=document.createElement('option');o.value=i;o.textContent=x.name+' — '+x.phone;$('selectedShop').appendChild(o);
+ });
+ $('sendBtn').disabled=!(cfg.endpoint && cfg.template && $('adminKey').value.trim() && shops.some(x=>x.consent));
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function resetForm(){['name','phone'].forEach(i=>$(i).value='');$('ebTarget').value=5;$('ebSales').value=0;$('doTarget').value=5;$('doSales').value=0;$('addBtn').textContent='Add / Update Shop';delete $('addBtn').dataset.edit}
+$('addBtn').onclick=()=>{
+ const x={name:$('name').value.trim(),phone:$('phone').value.replace(/\D/g,''),ebTarget:num('ebTarget'),ebSales:num('ebSales'),doTarget:num('doTarget'),doSales:num('doSales'),consent:false};
+ if(!x.name||x.phone.length<10){alert('Shop name and valid phone number are required.');return}
+ if($('addBtn').dataset.edit!==undefined){x.consent=!!shops[Number($('addBtn').dataset.edit)]?.consent;shops[Number($('addBtn').dataset.edit)]=x}
+ else shops.push(x);
+ resetForm();save();
+};
+$('shops').onclick=e=>{
+ const ed=e.target.dataset.edit,del=e.target.dataset.del;
+ if(ed!==undefined){const x=shops[+ed];['name','phone','ebTarget','ebSales','doTarget','doSales'].forEach((k,j)=>$(k).value=x[k]);$('addBtn').dataset.edit=ed;$('addBtn').textContent='Save Changes';}
+ if(del!==undefined&&confirm('Delete this shop?')){shops.splice(+del,1);save()}
+};
+$('sampleBtn').onclick=()=>{shops.push({name:'Sample Shop',phone:'923001234567',ebTarget:10,ebSales:4,doTarget:8,doSales:3,consent:false});save()};
+function message(x,lang){
+ const ebL=left(x.ebTarget,x.ebSales),doL=left(x.doTarget,x.doSales);
+ const ur=`السلام علیکم ${x.name} بھائی!\n\n📊 آج کا Daily Target Update\n\n🟢 EasyBuy\nٹارگٹ: ${x.ebTarget} | سیل: ${x.ebSales} | باقی: ${ebL}\n\n🔵 Delivery Orders\nٹارگٹ: ${x.doTarget} | مکمل: ${x.doSales} | باقی: ${doL}\n\nبراہِ کرم آج اپنا باقی ٹارگٹ مکمل کریں۔ شکریہ، ٹیم مینجمنٹ`;
+ const en=`Assalam-o-Alaikum ${x.name}!\n\n📊 Today's Daily Target Update\n\n🟢 EasyBuy\nTarget: ${x.ebTarget} | Achieved: ${x.ebSales} | Remaining: ${ebL}\n\n🔵 Delivery Orders\nTarget: ${x.doTarget} | Completed: ${x.doSales} | Remaining: ${doL}\n\nPlease complete your pending target today. Thank you, Management Team.`;
+ return lang==='ur'?ur:lang==='en'?en:ur+'\n\n--------------------\n\n'+en;
+}
+function preview(){if(!shops.length){alert('Add a shop first.');return}lastMessage=message(shops[Number($('selectedShop').value)||0],$('lang').value);$('preview').textContent=lastMessage}
+$('previewBtn').onclick=preview;$('previewBtn2').onclick=preview;
+$('copyBtn').onclick=async()=>{if(!lastMessage)preview();try{await navigator.clipboard.writeText(lastMessage);alert('Message copied.')}catch(e){alert('Copy not supported in this browser. Please select and copy the preview text.')}};
+$('saveConfigBtn').onclick=()=>{cfg={endpoint:$('endpoint').value.trim(),template:$('template').value.trim()};localStorage.setItem('ebdo_cfg',JSON.stringify(cfg));$('apiStatus').textContent='Endpoint/template saved. Admin key is kept only in this tab and is not saved.';render()};$('adminKey').addEventListener('input',render);
+$('testBtn').onclick=async()=>{if(!cfg.endpoint){alert('Save a backend endpoint first.');return}try{const r=await fetch(cfg.endpoint.replace(/\/$/,'')+'/health',{headers:{'x-admin-key':$('adminKey').value.trim()}});$('apiStatus').textContent='Backend response: '+r.status+' '+(await r.text()).slice(0,300)}catch(e){$('apiStatus').textContent='Connection failed: '+e.message}};
+$('sendBtn').onclick=async()=>{
+ if(!cfg.endpoint||!cfg.template||!$('adminKey').value.trim()){alert('Configure backend endpoint, template and admin key first.');return}
+ const recipients=shops.filter(x=>x.consent);
+ if(!recipients.length){alert('Select consent for at least one recipient.');return}
+ if(!confirm(`Send approved template "${cfg.template}" to ${recipients.length} consented shop(s)?`))return;
+ $('sendBtn').disabled=true;$('apiStatus').textContent='Sending request to backend…';
+ try{const r=await fetch(cfg.endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-admin-key':$('adminKey').value.trim()},body:JSON.stringify({template:cfg.template,language:$('lang').value,recipients:recipients.map(x=>({name:x.name,phone:x.phone,ebTarget:x.ebTarget,ebSales:x.ebSales,ebRemaining:left(x.ebTarget,x.ebSales),doTarget:x.doTarget,doSales:x.doSales,doRemaining:left(x.doTarget,x.doSales)}))})});
+ const t=await r.text();$('apiStatus').textContent='Backend status '+r.status+': '+t.slice(0,500);
+ }catch(e){$('apiStatus').textContent='Sending failed: '+e.message+' — backend must be deployed and configured.'}finally{render()}
+};
+$('exportBtn').onclick=()=>{const rows=[['name','phone','ebTarget','ebSales','doTarget','doSales','consent'],...shops.map(x=>[x.name,x.phone,x.ebTarget,x.ebSales,x.doTarget,x.doSales,x.consent?'yes':'no'])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='easybuy_delivery_targets.csv';a.click();URL.revokeObjectURL(a.href)};
+$('csvFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;const lines=(await f.text()).split(/\r?\n/).filter(Boolean);const parse=s=>{let out=[],v='',q=false;for(let i=0;i<s.length;i++){let c=s[i];if(c==='"'&&s[i+1]==='"'){v+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){out.push(v);v=''}else v+=c}out.push(v);return out};const hdr=parse(lines.shift()).map(x=>x.trim());let n=0;for(const line of lines){const a=parse(line),o={};hdr.forEach((k,i)=>o[k]=a[i]);if(o.name&&o.phone) {shops.push({name:o.name,phone:String(o.phone).replace(/\D/g,''),ebTarget:+o.ebTarget||0,ebSales:+o.ebSales||0,doTarget:+o.doTarget||0,doSales:+o.doSales||0,consent:/^(yes|true|1)$/i.test(o.consent||'')});n++}}save();alert('Imported '+n+' rows.');e.target.value=''};
+$('allConsentBtn').onclick=()=>alert('صرف ان دکانداروں کے لیے consent checkbox منتخب کریں جنہوں نے WhatsApp updates وصول کرنے کی رضامندی دی ہو۔');
+render();
+</script>
+</body></html>
